@@ -1,0 +1,57 @@
+#Macro define
+	# brief: Sum 2 reg into result reg and return bool if overflow occurred
+	# param: %first_num: 1st int; %sec_num: 2nd int; %result: overwrite
+	# retvl: $s0: 1 if overflow occured, 0 if nothing happened
+	.macro sum(%first_num, %sec_num, %result)
+	addu	%result, %first_num, %sec_num
+	nor	$t1, %first_num, $zero
+	sltu	$t2, %sec_num, $t1
+	beq	$t2, $0, overflow
+	and	$s0, $zero, $zero
+	j done
+overflow:
+	addiu	$s0, $zero, 1
+done:
+	.end_macro
+	
+### Print segment
+	.macro endl
+	addiu	$sp, $sp, -4
+	sw		$a0, 0($sp) 
+	li 		$v0, 11
+    	li 		$a0, 10
+    	syscall
+    	lw		$a0, 0($sp)
+    	addiu	$sp, $sp, 4
+	.end_macro
+	
+	.macro space
+	addiu	$sp, $sp, -4
+	sw		$a0, 0($sp) 
+	li 		$v0, 11
+    	li 		$a0, 32
+    	syscall
+    	lw		$a0, 0($sp)
+    	addiu	$sp, $sp, 4
+	.end_macro
+	
+	.macro print_text(%text)
+	li	$v0, 4
+	la	$a0, %text
+	syscall
+	.end_macro
+	
+	.macro print_int(%int) #int is register
+	li	$v0, 1
+	or	$a0, %int, $zero
+	syscall
+	.end_macro
+	
+	.macro print_float(%float) #float is register
+	mfc0	$t0, %float
+	mtc0	$t0, $f12
+	li		$v0, 2
+	syscall
+	.end_macro
+# Support function
+
