@@ -1,7 +1,7 @@
 .include "BTL003.mac"
 ### DATA Segment ###
 .data
-	fileName: .asciiz "Assignment\\FLOAT15.bin"
+	fileName: .asciiz "FLOAT15.bin"
 	FD: .word 0
 	array: .float 	5, 4, 3, 2, 1 #5					# Some testcase used for test?
 				-1.1, 6.3, 1, 6.6, 10 #10
@@ -21,7 +21,7 @@ main:
 	li		$a1, 0				# Only read
 	li		$a2, 1
 	syscall
-	slt		$t0, $v0, $zero	#v0 < zero?1:0
+	slt		$t0, $v0, $zero		#v0 < zero?1:0
 	bne		$t0, $zero, error_openfile_handle
 	sw		$v0, FD				# Save file descript
 	# Read the file
@@ -35,9 +35,9 @@ main:
 
 	# TESTED SEGMENT:
 	la		$a0, array			# Address of first element				
-	lw		$at, length			# Address of last element
+	lw		$at, length			# Length of array
 	addiu	$at, $at, -1			# CAUTION: Idk but this thing can be wrong
-	sll		$at, $at, 2
+	sll		$at, $at, 2			# Calculate address of last element
 	addu	$a1, $a0, $at			
 	
 	#Print the before sorting array
@@ -51,15 +51,14 @@ main:
 	
 	#Print the after sorting array
 	la		$a0, array			# Address of first element
-	lw		$at, length			# Address of last element
-	addiu	$at, $at, -1			
+	lw		$at, length			# Length of array
+	addiu	$at, $at, -1			# Calculate address of last element
 	sll		$at, $at, 2
-	addu	$a1, $a0, $at	
+	addu	$a1, $a0, $at
 	jal		print_ieee_array
 	endl
 	
-	li		$v0, 10				#end of program
-	syscall
+	jal		close_file
 # x x x x x x
 #^            ^
 #first	last addr
@@ -89,8 +88,8 @@ mergeSort:
 	sra		$t1, $t1, 1			# Middle point (divide by 2)
 	add		$s6, $a0, $t1			# Middle address
 	ori		$at, $zero, 3			# Round down to the nearest multiple of 4
-	nor		$at, $at, $zero		#0x FFFF _ FFFC
-	and		$s6, $s6, $at
+	nor		$at, $at, $zero			#0x FFFF _ FFFC <Mask for middle address>
+	and		$s6, $s6, $at			# The point of this is to point exactly the middle element of array
 	sw		$s6, 12($sp)			# Save middle address into stack	
 	
 	lw		$a0, 4($sp)
@@ -161,8 +160,8 @@ update_pointers:
 	addi		$at, $zero, 4
 	addu	$a1, $a1, $at		# Point to end of array (not element)
 	addu	$a2, $a2, $at		# Point to end of array (not element)
-	beq		$s1, $a1, copy_second_half
-	beq		$s2, $a2, copy_first_half
+	beq		$s1, $a1, copy_second_half		# If we reach to the end of first array, copy the rest of 2nd arr
+	beq		$s2, $a2, copy_first_half			# Similar to above
 	addiu	$s3, $s3, 4		# tmp_arr[k++]
 	#If not, continue merge
 	j		merge_loop
@@ -209,4 +208,10 @@ error_openfile_handle:
 error_readfile_handle:
 	print_text(cannot_read_file)
 	li	$v0, 10
+	syscall
+close_file:
+	lw		$a0, FD
+	li		$v0, 16
+	syscall
+	li		$v0, 10
 	syscall
